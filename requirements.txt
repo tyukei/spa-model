@@ -1,0 +1,6 @@
+pandas
+matplotlib
+japanize_matplotlib
+keras
+tesnsorflow
+streamlit
