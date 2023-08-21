@@ -55,6 +55,8 @@ def process_data(path):
     global temp_mean
     # CSVファイルを読み込む
     df = pd.read_csv(path)
+    with st.expander("アップロードしたデータ"):
+        st.dataframe(df)
     # 窓のサイズ
     window_size = 50
     # 体表温度を移動平均で平滑化
@@ -149,7 +151,7 @@ def output(df):
     df = df[['時刻', '体表温度', '体動', '脈周期[ms]', 'ラベル']]
     RESULT_PATH = "result.csv"
     df.to_csv(RESULT_PATH, index=False)
-    with st.expander("結果の表を表示"):
+    with st.expander("処理後のデータ"):
         st.dataframe(df)
     graph(RESULT_PATH)
     with open(RESULT_PATH, "rb") as f:
@@ -163,7 +165,7 @@ def output(df):
 
 def init_uis():
     global upload_file
-    st.title("サウナラベル付けアプリ")
+    st.title("サウナラベル付けアプリ🧖")
     upload_file = st.file_uploader("csvをアップロードしてください", type="csv")
     
 def on_upload():
