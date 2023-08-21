@@ -40,6 +40,19 @@ https://spa-label-maker-0822-10.streamlit.app
 また、ディバイス起動時とディバイス終了時には０になるように調整
 
 
+### Evaluation
+- result graph
+  
+<img width="701" alt="image" src="https://github.com/tyukei/spa-model/assets/70129567/260532c3-5c90-43e3-9e65-fa1fc555ebeb">
+
+- compare graph
+  
+![image](https://github.com/tyukei/spa-model/assets/70129567/cce85f46-f0dd-4821-843f-749adc134e72)
+
+- confusion matrix
+  
+![image](https://github.com/tyukei/spa-model/assets/70129567/b965cb2f-0796-49e1-8625-8e7a061aff48)
+
 
 ## Setup
 ```
