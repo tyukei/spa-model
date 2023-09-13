@@ -68,21 +68,23 @@ def process_data(path):
     return df
 
 def assign_label_v2(diff1, diff2):
-    buff = 0.001
-    if diff1 > buff and diff2 < -buff:
+    b1 = 0.001
+    ave2_3 = -0.00982 + 0.02617
+    ave2_3_2 = 0.0000606 + 0.00104
+    ave3_4 = - 0.02700
+    ave3_4_2 = 0.0002941
+    ave4_2 = -0.00056 
+    ave4_2_2 = -0.0000625 + 0.0007881
+
+    if diff1 > ave4_2 and (diff2 < -b1 or (-ave4_2_2 <= diff2 <= ave4_2_2)):
         return 2
-    elif (-buff*2 <= diff1 and diff1 <= buff*2)  and diff2 < 0:
+    elif (-ave2_3 <= diff1 <= ave2_3) and (ave2_3_2 < diff2 < ave2_3_2):
         return 3
-    elif diff1 < -buff and diff2 < buff/10:
-        return 3
-    elif diff1 < -buff and diff2 >= buff/10:
-        return 4
-    elif (-buff<=diff1 and diff1<=buff) and diff2 > 0:
-        return 2
-    elif diff1 > buff and diff2 > buff:
-        return 2
-    elif diff1 > buff and (-buff<=diff2 and diff2<=buff):
-        return 2
+    elif diff1 < -ave3_4:
+        if diff2 < ave3_4_2:
+            return 3
+        elif diff2 >= ave3_4_2:
+            return 4
     return None
 
 def constrained_label_assignment(current_label, proposed_label, current_temp):
