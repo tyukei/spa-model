@@ -67,24 +67,22 @@ def process_data(path):
     df['temp\'\'_平滑化'] = df['temp\'_平滑化'].diff()
     return df
 
-def assign_label(diff1, diff2):
-    b1 = 0.001
-    ave2_3 = -0.00982 + 0.02617
-    ave2_3_2 = 0.0000606 + 0.00104
-    ave3_4 = - 0.02700
-    ave3_4_2 = 0.0002941
-    ave4_2 = -0.00056 
-    ave4_2_2 = -0.0000625 + 0.0007881
-
-    if diff1 > ave4_2 and (diff2 < -b1 or (-ave4_2_2 <= diff2 <= ave4_2_2)):
+def assign_label_v2(diff1, diff2):
+    buff = 0.001
+    if diff1 > buff and diff2 < -buff:
         return 2
-    elif (-ave2_3 <= diff1 <= ave2_3) and (ave2_3_2 < diff2 < ave2_3_2):
+    elif (-buff*2 <= diff1 and diff1 <= buff*2)  and diff2 < 0:
         return 3
-    elif diff1 < -ave3_4:
-        if diff2 < ave3_4_2:
-            return 3
-        elif diff2 >= ave3_4_2:
-            return 4
+    elif diff1 < -buff and diff2 < buff/10:
+        return 3
+    elif diff1 < -buff and diff2 >= buff/10:
+        return 4
+    elif (-buff<=diff1 and diff1<=buff) and diff2 > 0:
+        return 2
+    elif diff1 > buff and diff2 > buff:
+        return 2
+    elif diff1 > buff and (-buff<=diff2 and diff2<=buff):
+        return 2
     return None
 
 def constrained_label_assignment(current_label, proposed_label, current_temp):
@@ -97,13 +95,13 @@ def constrained_label_assignment(current_label, proposed_label, current_temp):
         else:
              for i in range(len(labels_list)-1, -1, -1):
                   if labels_list[i] == 2:
-                       labels_list[i] = 4
+                       labels_list[i] = 0
                   else:
                        break
     elif current_label == 3 and proposed_label == 4:
         return proposed_label
-    elif current_label == 4 and proposed_label == 2:    
-            return proposed_label
+    elif current_label == 4 and proposed_label == 2:
+        return proposed_label
     elif current_label == 3 and proposed_label == 2:
         for i in range(len(labels_list)-1, -1, -1):
             if labels_list[i] == 3:
@@ -115,22 +113,16 @@ def constrained_label_assignment(current_label, proposed_label, current_temp):
 
 def label_for_segment(segment):
     last_row = segment.iloc[-1]
-    return assign_label(last_row['temp\'_平滑化'], last_row['temp\'\'_平滑化'])
+    return assign_label_v2(last_row['temp\'_平滑化'], last_row['temp\'\'_平滑化'])
 
 def predict_labels(df):
     global labels_list
-    is_start = False
-    previous_label = 0
+    previous_label = None
     sample_size = 10
-    first_size = 30
-    labels_list = [0]*first_size
-
-    for i in range(first_size, len(df), sample_size):
+    for i in range(0, len(df), sample_size):
         segment = df.iloc[i:i+sample_size]
-        # rule1
         label = label_for_segment(segment)
         current_temp = segment.iloc[-1]['体表温度_平滑化']
-        # rule2
         label = constrained_label_assignment(previous_label, label, current_temp)
         if label is None:
             if previous_label is None:
@@ -142,67 +134,34 @@ def predict_labels(df):
 
     df['ラベル'] = labels_list
 
-def check_starttime(df):
-    samelabel_count = 0
-    is_start = False
-    for i in range(1, len(df['ラベル'])):
-        if df['ラベル'].iloc[i-1] == df['ラベル'].iloc[i]:
-            samelabel_count += 1
-        else:
-            if is_start == False and df['ラベル'].iloc[i-1] != 2:
-                for j in range(0, i):
-                    df.loc[j, 'ラベル'] = 0
-            elif df['ラベル'].iloc[i-1] == 2:
-                is_start = True
-            samelabel_count = 0
-    return df
-
-def check_lasttime(df):
-    for i in range(len(df['ラベル']),1,-1):
-        if df['ラベル'].iloc[i-1] == 2 or df['ラベル'].iloc[i-1] == 3:
-            df.loc[i-1, 'ラベル'] = 0
-        elif df['ラベル'].iloc[i-1] == 4:
-            break
-    return df
-
 def add_0_label(df):
-    gap = 50
-    last_label_len = 0
+    # ラベルが切り替わる間をラベル0で上書き
     for i in range(1, len(df['ラベル'])):
-        last_label_len += 1
-        if df['ラベル'].iloc[i-1] == 0 and df['ラベル'].iloc[i] == 2:
-            df.loc[df.index[i-gap:i], 'ラベル'] = 0
         # ラベルが2から3に変わる時
-        elif df['ラベル'].iloc[i-1] == 2 and df['ラベル'].iloc[i] == 3:
-            df.loc[df.index[i-gap:i], 'ラベル'] = 0
-            last_label_len = 0
+        if df['ラベル'].iloc[i-1] == 2 and df['ラベル'].iloc[i] == 3:
+            df['ラベル'].iloc[i-30:i] = 0
         # ラベルが3から4に変わる時
         elif df['ラベル'].iloc[i-1] == 3 and df['ラベル'].iloc[i] == 4:
-            if last_label_len < 60:
-                df.loc[df.index[i-last_label_len:i-last_label_len+60], 'ラベル'] = 3
-            else:
-                df.loc[df.index[i:i+gap], 'ラベル'] = 0
-                last_label_len = 0
+            df['ラベル'].iloc[i:i+30] = 0
         # ラベルが4から2に変わる時
         elif df['ラベル'].iloc[i-1] == 4 and df['ラベル'].iloc[i] == 2:
-            if last_label_len < 120:
-                df.loc[df.index[i-last_label_len:i-last_label_len+120], 'ラベル'] = 4
-            else:
-                df.loc[df.index[i:i+gap], 'ラベル'] = 0
-                last_label_len = 0
-def output(df,file):
+            df['ラベル'].iloc[i-30:i] = 0
+
+def output(df):
     df = df[['時刻', '体表温度', '体動', '脈周期[ms]', 'ラベル']]
-    RESULT_PATH = file.name.split(".")[0] + "_result.csv"
+    RESULT_PATH = "result.csv"
     df.to_csv(RESULT_PATH, index=False)
     with st.expander("処理後のデータ"):
         st.dataframe(df)
     graph(RESULT_PATH)
     with open(RESULT_PATH, "rb") as f:
         st.download_button(
-			label="ダウンロード" ,
+			label="Download result.csv",
 			data=f,
-			file_name=RESULT_PATH,
+			file_name="result.csv",
 			mime="text/csv")
+
+
 
 def init_uis():
     global upload_file
@@ -213,13 +172,9 @@ def on_upload():
     if upload_file is not None:
         with st.spinner("アップロードしたファイルを処理しています"):
             df = process_data(upload_file)
-            # rule1,2
             predict_labels(df)
-            # rule3
-            df2=check_starttime(df)
-            df3=check_lasttime(df2)
-            df4=add_0_label(df3)
-            output(df4,upload_file)
+            add_0_label(df)
+            output(df)
         
     
 
