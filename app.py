@@ -61,7 +61,7 @@ def process_data(path):
     window_size = 50
     # 体表温度を移動平均で平滑化
     df['体表温度_平滑化'] = df['体表温度'].rolling(window=window_size).mean().shift(-window_size + 1)
-    temp_mean = df['体表温度_平滑化'].mean()
+    temp_mean = df['体表温度_平滑化'].quantile(0.7)
     # 平滑化したデータの1階微分と2階微分を計算
     df['temp\'_平滑化'] = df['体表温度_平滑化'].diff()
     df['temp\'\'_平滑化'] = df['temp\'_平滑化'].diff()
@@ -97,13 +97,13 @@ def constrained_label_assignment(current_label, proposed_label, current_temp):
         else:
              for i in range(len(labels_list)-1, -1, -1):
                   if labels_list[i] == 2:
-                       labels_list[i] = 0
+                       labels_list[i] = 4
                   else:
                        break
     elif current_label == 3 and proposed_label == 4:
         return proposed_label
-    elif current_label == 4 and proposed_label == 2:
-        return proposed_label
+    elif current_label == 4 and proposed_label == 2:    
+            return proposed_label
     elif current_label == 3 and proposed_label == 2:
         for i in range(len(labels_list)-1, -1, -1):
             if labels_list[i] == 3:
