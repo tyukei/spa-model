@@ -139,29 +139,31 @@ def predict_labels(df):
 
 def add_0_label(df):
     gap = 50
-    last_label_len = 0
+    last_label_len_3 = 0
+    last_label_len_4 = 0
     for i in range(1, len(df['ラベル'])):
-        last_label_len += 1
+        last_label_len_3 += 1
+        last_label_len_4 += 1
         if df['ラベル'].iloc[i-1] == 0 and df['ラベル'].iloc[i] == 2:
             df.loc[df.index[i-gap:i], 'ラベル'] = 0
         # ラベルが2から3に変わる時
         elif df['ラベル'].iloc[i-1] == 2 and df['ラベル'].iloc[i] == 3:
             df.loc[df.index[i-gap:i], 'ラベル'] = 0
-            last_label_len = 0
+            last_label_len_3 = 0
         # ラベルが3から4に変わる時
         elif df['ラベル'].iloc[i-1] == 3 and df['ラベル'].iloc[i] == 4:
-            if last_label_len < 60:
-                df.loc[df.index[i-last_label_len:i-last_label_len+60], 'ラベル'] = 3
+            if last_label_len_3 < 60:
+                df.loc[df.index[i-last_label_len_3:i-last_label_len_3+60], 'ラベル'] = 3
             else:
                 df.loc[df.index[i:i+gap], 'ラベル'] = 0
-                last_label_len = 0
+                last_label_len_4 = 0
         # ラベルが4から2に変わる時
         elif df['ラベル'].iloc[i-1] == 4 and df['ラベル'].iloc[i] == 2:
-            if last_label_len < 120:
-                df.loc[df.index[i-last_label_len:i-last_label_len+120], 'ラベル'] = 4
+            if last_label_len_4 < last_label_len_3*2:
+                df.loc[df.index[i-last_label_len_4:i-last_label_len_4+last_label_len_3*2], 'ラベル'] = 4
             else:
                 df.loc[df.index[i:i+gap], 'ラベル'] = 0
-                last_label_len = 0
+                last_label_len_4 = 0
 
 def output(df):
     df = df[['時刻', '体表温度', '体動', '脈周期[ms]', 'ラベル']]
