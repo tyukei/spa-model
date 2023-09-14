@@ -135,6 +135,7 @@ def predict_labels(df):
         previous_label = label
 
     df['ラベル'] = labels_list
+    return df
 
 def add_0_label(df):
     gap = 50
@@ -187,8 +188,8 @@ def on_upload():
     if upload_file is not None:
         with st.spinner("アップロードしたファイルを処理しています"):
             df = process_data(upload_file)
-            predict_labels(df)
-            add_0_label(df)
+            df2=predict_labels(df)
+            add_0_label(df2)
             output(df)
         
     
