@@ -162,6 +162,8 @@ def check_lasttime(df):
 
 def add_0_label(df):
     gap = 50
+    minimum_3 = 60
+    minimum_4 = 150
     last_label_len = 0
     for i in range(1, len(df['ラベル'])):
         last_label_len += 1
@@ -173,15 +175,15 @@ def add_0_label(df):
             last_label_len = 0
         # ラベルが3から4に変わる時
         elif df['ラベル'].iloc[i-1] == 3 and df['ラベル'].iloc[i] == 4:
-            if last_label_len < 60:
-                df.loc[df.index[i-last_label_len:i-last_label_len+60], 'ラベル'] = 3
+            if last_label_len < minimum_3:
+                df.loc[df.index[i-last_label_len:i-last_label_len+minimum_3], 'ラベル'] = 3
             else:
                 df.loc[df.index[i:i+gap], 'ラベル'] = 0
                 last_label_len = 0
         # ラベルが4から2に変わる時
         elif df['ラベル'].iloc[i-1] == 4 and df['ラベル'].iloc[i] == 2:
-            if last_label_len < 120:
-                df.loc[df.index[i-last_label_len:i-last_label_len+120], 'ラベル'] = 4
+            if last_label_len < minimum_4:
+                df.loc[df.index[i-last_label_len:i-last_label_len+minimum_4], 'ラベル'] = 4
             else:
                 df.loc[df.index[i:i+gap], 'ラベル'] = 0
                 last_label_len = 0
