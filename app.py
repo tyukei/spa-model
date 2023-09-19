@@ -137,6 +137,29 @@ def predict_labels(df):
     df['ラベル'] = labels_list
     return df
 
+def check_starttime(df):
+    samelabel_count = 0
+    is_start = False
+    for i in range(1, len(df['ラベル'])):
+        if df['ラベル'].iloc[i-1] == df['ラベル'].iloc[i]:
+            samelabel_count += 1
+        else:
+            if is_start == False and df['ラベル'].iloc[i-1] != 2:
+                for j in range(0, i):
+                    df.loc[j, 'ラベル'] = 0
+            elif df['ラベル'].iloc[i-1] == 2:
+                is_start = True
+            samelabel_count = 0
+    return df
+
+def check_lasttime(df):
+    for i in range(len(df['ラベル']),1,-1):
+        if df['ラベル'].iloc[i-1] == 2 or df['ラベル'].iloc[i-1] == 3:
+            df.loc[i-1, 'ラベル'] = 0
+        elif df['ラベル'].iloc[i-1] == 4:
+            break
+    return df
+
 def add_0_label(df):
     gap = 50
     last_label_len = 0
@@ -188,9 +211,11 @@ def on_upload():
     if upload_file is not None:
         with st.spinner("アップロードしたファイルを処理しています"):
             df = process_data(upload_file)
-            df2=predict_labels(df)
-            add_0_label(df2)
-            output(df)
+            df1=predict_labels(df1)
+            df2=check_starttime(df1)
+            df3=check_lasttime(df2)
+            add_0_label(df3)
+            output(df3)
         
     
 
