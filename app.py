@@ -211,7 +211,7 @@ def on_upload():
     if upload_file is not None:
         with st.spinner("アップロードしたファイルを処理しています"):
             df = process_data(upload_file)
-            df1=predict_labels(df1)
+            df1=predict_labels(df)
             df2=check_starttime(df1)
             df3=check_lasttime(df2)
             add_0_label(df3)
