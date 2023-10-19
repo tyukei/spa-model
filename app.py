@@ -240,6 +240,7 @@ def init_uis():
     st.title("サウナラベル付けアプリ🧖")
     upload_file = st.file_uploader("csvをアップロードしてください", type="csv")
     enable_hr = st.sidebar.checkbox("脈周期",value=True)
+
     
 def on_upload():
     if upload_file is not None:
@@ -251,11 +252,15 @@ def on_upload():
             df4=add_0_label(df3)
             output(df4)
         
-    
+def on_check():
+    if enable_hr:
+        on_upload()
+    else:
+        on_upload()
 
 def main():
     init_uis()
-    on_upload()
+    on_check()
     
 
 if __name__ == "__main__":
