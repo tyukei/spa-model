@@ -69,12 +69,12 @@ def process_data(path):
 
 def assign_label_v2(diff1, diff2):
     b1 = 0.001
-    ave2_3 = -0.00982 + 0.02617
-    ave2_3_2 = 0.0000606 + 0.00104
+    ave2_3 = 0.01635
+    ave2_3_2 = 0.0011006
     ave3_4 = - 0.02700
     ave3_4_2 = 0.0002941
     ave4_2 = -0.00056 
-    ave4_2_2 = -0.0000625 + 0.0007881
+    ave4_2_2 = 0.0007256
 
     if diff1 > ave4_2 and (diff2 < -b1 or (-ave4_2_2 <= diff2 <= ave4_2_2)):
         return 2
