@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import japanize_matplotlib
 
 upload_file = None
+enable_hr = True
+approxi_graph=False
 labels_list = []
 temp_mean = 0
 
@@ -11,6 +13,11 @@ def graph(PATH):
     # Load the data
     data = pd.read_csv(PATH)
     data['時刻'] = pd.to_datetime(data['時刻'])
+    data['体表温度_平滑化'] = data['体表温度'].rolling(window=100,min_periods=1).mean()
+    df_filled = data.dropna(subset=['脈周期[ms]'])
+    df_filled.reset_index(drop=True, inplace=True)
+    data['脈周期[ms]'] = data['脈周期[ms]'].fillna(df_filled['脈周期[ms]'].rolling(window=3, min_periods=1, center=True).mean())
+    data['脈周期[ms]_平滑化'] = data['脈周期[ms]'].rolling(window=100,min_periods=1).mean()   
 
     # Initialize the plot
     fig, axes = plt.subplots(nrows=3, ncols=1, figsize=(15, 15), sharex=True)
@@ -61,10 +68,16 @@ def process_data(path):
     window_size = 50
     # 体表温度を移動平均で平滑化
     df['体表温度_平滑化'] = df['体表温度'].rolling(window=window_size).mean().shift(-window_size + 1)
+    df_filled = df.dropna(subset=['脈周期[ms]'])
+    df_filled.reset_index(drop=True, inplace=True)
+    df['脈周期[ms]'] = df['脈周期[ms]'].fillna(df_filled['脈周期[ms]'].rolling(window=3, min_periods=1, center=True).mean())
+    df['hr_平滑化'] = df['脈周期[ms]'].rolling(window=window_size,min_periods=1).mean()
+
     temp_mean = df['体表温度_平滑化'].quantile(0.7)
     # 平滑化したデータの1階微分と2階微分を計算
     df['temp\'_平滑化'] = df['体表温度_平滑化'].diff()
     df['temp\'\'_平滑化'] = df['temp\'_平滑化'].diff()
+    df['hr\'_平滑化'] = df['hr_平滑化'].diff()
     return df
 
 def assign_label_v2(diff1, diff2):
@@ -182,11 +195,29 @@ def add_0_label(df):
                 last_label_len = 0
         # ラベルが4から2に変わる時
         elif df['ラベル'].iloc[i-1] == 4 and df['ラベル'].iloc[i] == 2:
-            if last_label_len < minimum_4:
-                df.loc[df.index[i-last_label_len:i-last_label_len+minimum_4], 'ラベル'] = 4
+            if enable_hr:
+                hr_diff_ave = sum(df.iloc[i-gap:i]['hr\'_平滑化']) / gap
+                if last_label_len < 120:
+                    df.loc[df.index[i-last_label_len:i-last_label_len+120], 'ラベル'] = 4
+                elif hr_diff_ave > -0.2:
+                    df.loc[df.index[i-last_label_len:i], 'ラベル'] = 4
+                    print(f"hr_diff>0: {i}")
+                    j = i
+                    while hr_diff_ave > -0.3:
+                        j += gap
+                        hr_diff_ave = sum(df.iloc[j-gap:j]['hr\'_平滑化']) / gap
+                        df.loc[df.index[j-gap:j], 'ラベル'] = 4
+                else:
+                    print(f"hr_diff_ave: {hr_diff_ave}")
+                    df.loc[df.index[i:i+gap], 'ラベル'] = 0
+                    last_label_len = 0
             else:
-                df.loc[df.index[i:i+gap], 'ラベル'] = 0
-                last_label_len = 0
+                if last_label_len < minimum_4:
+                    df.loc[df.index[i-last_label_len:i-last_label_len+minimum_4], 'ラベル'] = 4
+                else:
+                    df.loc[df.index[i:i+gap], 'ラベル'] = 0
+                    last_label_len = 0
+    return df
 
 def output(df):
     df = df[['時刻', '体表温度', '体動', '脈周期[ms]', 'ラベル']]
@@ -205,9 +236,10 @@ def output(df):
 
 
 def init_uis():
-    global upload_file
+    global upload_file,enable_hr
     st.title("サウナラベル付けアプリ🧖")
     upload_file = st.file_uploader("csvをアップロードしてください", type="csv")
+    enable_hr = st.sidebar.checkbox("脈周期",value=True)
     
 def on_upload():
     if upload_file is not None:
@@ -216,8 +248,8 @@ def on_upload():
             df1=predict_labels(df)
             df2=check_starttime(df1)
             df3=check_lasttime(df2)
-            add_0_label(df3)
-            output(df3)
+            df4=add_0_label(df3)
+            output(df4)
         
     
 
